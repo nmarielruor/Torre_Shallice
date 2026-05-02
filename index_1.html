@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Torre de Londres — Shallice (1982)</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem}
+    #app{width:100%;max-width:720px}
+    .phase{display:none}.phase.active{display:block}
+    #inst-screen{text-align:center;padding:2.5rem 2rem;max-width:500px;margin:3rem auto;background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:14px}
+    #inst-screen h2{font-size:22px;font-weight:500;margin-bottom:4px}
+    #inst-screen .ref{font-size:12px;color:#888780;margin-bottom:1.25rem}
+    #inst-screen p{font-size:14px;color:#5f5e5a;line-height:1.75;margin-bottom:1rem}
+    .rules{text-align:left;font-size:13px;color:#5f5e5a;list-style:none;background:#f5f4f0;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1.5rem}
+    .rules li{padding:3px 0}.rules li::before{content:"— "}
+    .progress{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1.25rem}
+    .prog-dot{width:24px;height:24px;border-radius:50%;border:1.5px solid #b4b2a9;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888780}
+    .prog-dot.done{background:#639922;border-color:#639922;color:#fff}
+    .prog-dot.current{background:#378ADD;border-color:#378ADD;color:#fff}
+    .info-bar{font-size:13px;color:#5f5e5a;min-height:22px;padding:4px 0;margin-bottom:0.5rem}
+    .hint-bar{font-size:13px;color:#378ADD;min-height:22px;padding:4px 10px;margin-bottom:0.5rem;background:rgba(55,138,221,0.08);border-radius:6px;border-left:3px solid #378ADD}
+    .boards{display:flex;gap:3rem;justify-content:center;align-items:flex-end;margin:1rem 0;flex-wrap:wrap}
+    .board-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+    .board-lbl{font-size:12px;color:#5f5e5a;font-weight:500}
+    .btns{display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap}
+    .btn{padding:8px 20px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;background:#fff;color:#1a1a18;font-size:13px;cursor:pointer;font-family:inherit;transition:background .12s}
+    .btn:hover{background:#f5f4f0}
+    .btn-primary{background:#378ADD;border-color:#378ADD;color:#fff}
+    .btn-primary:hover{background:#185FA5}
+    h2.pg{font-size:18px;font-weight:500;margin-bottom:3px}
+    p.sub{font-size:13px;color:#5f5e5a;margin-bottom:1rem}
+    .practica-badge{display:inline-block;background:rgba(55,138,221,0.12);color:#378ADD;font-size:11px;font-weight:500;padding:2px 10px;border-radius:20px;margin-bottom:8px;letter-spacing:0.04em}
+    .results-wrap{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1.25rem;margin-top:1rem;overflow-x:auto}
+    .results-table{width:100%;border-collapse:collapse;font-size:13px}
+    .results-table th{text-align:left;padding:7px 10px;border-bottom:1px solid rgba(0,0,0,0.08);color:#5f5e5a;font-weight:500}
+    .results-table td{padding:7px 10px;border-bottom:0.5px solid rgba(0,0,0,0.06);color:#1a1a18}
+    .results-table tr:last-child td{border-bottom:none}
+    .ok{color:#639922;font-weight:500}.fail{color:#E24B4A;font-weight:500}
+    .sum-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem}
+    .sum-card{background:#f5f4f0;border-radius:8px;padding:0.75rem;text-align:center}
+    .sum-card .sl{font-size:11px;color:#5f5e5a;margin-bottom:3px}
+    .sum-card .sv{font-size:20px;font-weight:500;color:#1a1a18}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- INSTRUCCIONES -->
+  <div id="phase-inst" class="phase active">
+    <div id="inst-screen">
+      <h2>Torre de Londres</h2>
+      <p class="ref">Shallice, 1982 — 12 problemas originales</p>
+      <p>Haz clic en una bola para seleccionarla y luego clic en el palo destino para moverla. Tu objetivo es igualar el tablero meta en el menor número de movimientos.</p>
+      <ul class="rules">
+        <li>El palo largo admite hasta 3 bolas</li>
+        <li>El palo medio admite hasta 2 bolas</li>
+        <li>El palo corto admite solo 1 bola</li>
+        <li>Solo puedes mover la bola en la cima de cada palo</li>
+      </ul>
+      <p style="font-size:13px;color:#5f5e5a;">Primero realizarás un <strong style="color:#1a1a18">ejercicio de práctica</strong> para familiarizarte con la tarea.</p>
+      <div style="margin-top:1.25rem">
+        <button class="btn btn-primary" onclick="startPractice()">Comenzar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRÁCTICA -->
+  <div id="phase-practice" class="phase">
+    <div class="practica-badge">EJERCICIO DE PRÁCTICA</div>
+    <h2 class="pg">Torre de Londres</h2>
+    <p class="sub">Familiarízate con la tarea antes de comenzar</p>
+    <div class="hint-bar">Movimientos mínimos para resolver este problema: <strong>2</strong></div>
+    <div class="info-bar" id="prac-info-bar">Selecciona una bola para comenzar</div>
+    <div class="boards">
+      <div class="board-wrap">
+        <div class="board-lbl">Tu tablero</div>
+        <canvas id="prac-player-canvas" width="220" height="190" style="cursor:pointer;display:block"></canvas>
+      </div>
+      <div class="board-wrap">
+        <div class="board-lbl">Meta</div>
+        <canvas id="prac-goal-canvas" width="220" height="190" style="display:block"></canvas>
+      </div>
+    </div>
+    <div class="btns" id="prac-btns">
+      <button class="btn" onclick="resetPractice()">Reiniciar práctica</button>
+      <button class="btn btn-primary" onclick="skipToTask()">Continuar sin práctica →</button>
+    </div>
+  </div>
+
+  <!-- TAREA -->
+  <div id="phase-task" class="phase">
+    <h2 class="pg">Torre de Londres <span style="font-weight:400;color:#5f5e5a;font-size:14px">— problema <span id="prob-num">1</span> de 12</span></h2>
+    <p class="sub"></p>
+    <div class="progress" id="progress-dots"></div>
+    <div class="info-bar" id="info-bar">Selecciona una bola para comenzar</div>
+    <div class="boards">
+      <div class="board-wrap">
+        <div class="board-lbl">Tu tablero</div>
+        <canvas id="player-canvas" width="220" height="190" style="cursor:pointer;display:block"></canvas>
+      </div>
+      <div class="board-wrap">
+        <div class="board-lbl">Meta</div>
+        <canvas id="goal-canvas" width="220" height="190" style="display:block"></canvas>
+      </div>
+    </div>
+    <div class="btns">
+      <button class="btn" onclick="resetProblem()">Reiniciar problema</button>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div id="phase-results" class="phase">
+    <h2 class="pg">Resultados</h2>
+    <p class="sub">Torre de Londres — Shallice (1982)</p>
+    <div class="sum-cards" id="sum-cards"></div>
+    <div class="results-wrap">
+      <table class="results-table">
+        <thead><tr><th>#</th><th>Movimientos</th><th>Mínimo requerido</th><th>Tiempo total (s)</th><th>Tiempo planif. (s)</th><th>Estado</th></tr></thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+    <div class="btns" style="margin-top:1.25rem">
+      <button class="btn btn-primary" onclick="exportCSV()">Exportar CSV</button>
+      <button class="btn" onclick="restartAll()">Reiniciar prueba</button>
+    </div>
+  </div>
+
+</div>
+<script>
+const PRAC_INIT={L:['A','V'],M:['R'],S:[]};
+const PRAC_GOAL={L:['A'],M:['V','R'],S:[]};
+const INIT={L:['V','R'],M:['A'],S:[]};
+const GOALS=[
+  {L:[],M:['A','V'],S:['R']},
+  {L:['V'],M:['R'],S:['A']},
+  {L:['V','A'],M:['R'],S:[]},
+  {L:['V'],M:['R','A'],S:[]},
+  {L:['R','V'],M:['A'],S:[]},
+  {L:['A'],M:['R','V'],S:[]},
+  {L:['R','A'],M:[],S:['V']},
+  {L:[],M:['R','A'],S:['V']},
+  {L:['R','V','A'],M:[],S:[]},
+  {L:['R','A','V'],M:[],S:[]},
+  {L:['A','V'],M:['R'],S:[]},
+  {L:['A'],M:['R'],S:['V']}
+];
+const MIN_MOVES=[2,2,3,3,4,4,4,4,5,5,3,3];
+const PEG_MAX={L:3,M:2,S:1};
+const BALL_COLOR={R:'#E24B4A',V:'#639922',A:'#378ADD'};
+const BALL_DARK={R:'#a32d2d',V:'#3b6d11',A:'#185FA5'};
+const BALL_NAME={R:'Roja',V:'Verde',A:'Azul'};
+const W=220,H=190,BASE_Y=170,BASE_X=10,BASE_W=200,BASE_H=10,BR=19;
+const PEGS=[
+  {key:'L',cx:52,pegTop:38,pegH:BASE_Y-38},
+  {key:'M',cx:115,pegTop:68,pegH:BASE_Y-68},
+  {key:'S',cx:170,pegTop:110,pegH:BASE_Y-110}
+];
+
+let pegs,selected,moves,startTime,planTime,firstMoved;
+let pracPegs,pracSelected,pracFirstMoved,pracStartTime,pracPlanTime;
+let currentProb=0,results=[];
+
+function dc(o){return JSON.parse(JSON.stringify(o));}
+
+function drawTower(canvas,pegData,isPlayer,sel){
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#6b4c0e';
+  ctx.beginPath();ctx.roundRect(BASE_X,BASE_Y,BASE_W,BASE_H,4);ctx.fill();
+  ctx.fillStyle='rgba(255,210,80,0.15)';
+  ctx.beginPath();ctx.roundRect(BASE_X+6,BASE_Y+2,BASE_W-12,4,2);ctx.fill();
+  PEGS.forEach(({key,cx,pegTop,pegH})=>{
+    ctx.fillStyle='#7a5c10';
+    ctx.beginPath();ctx.roundRect(cx-5,pegTop,10,pegH,3);ctx.fill();
+    ctx.fillStyle='rgba(255,210,80,0.12)';
+    ctx.beginPath();ctx.roundRect(cx-2,pegTop+6,3,pegH-12,2);ctx.fill();
+    ctx.fillStyle='#9a7420';
+    ctx.beginPath();ctx.ellipse(cx,pegTop,6,3,0,0,Math.PI*2);ctx.fill();
+  });
+  PEGS.forEach(({key,cx})=>{
+    const arr=pegData[key];
+    const maxB=PEG_MAX[key];
+    for(let i=0;i<maxB;i++){
+      const color=arr[i]||null;
+      const cy=BASE_Y-BR-2-i*(BR*2+3);
+      if(!color){
+        ctx.beginPath();ctx.arc(cx,cy,BR,0,Math.PI*2);
+        ctx.setLineDash([4,3]);ctx.strokeStyle='rgba(150,150,150,0.3)';ctx.lineWidth=1;ctx.stroke();
+        ctx.setLineDash([]);continue;
+      }
+      const isTop=(i===arr.length-1);
+      const isSel=(isPlayer&&sel&&sel.peg===key&&isTop);
+      ctx.beginPath();ctx.arc(cx+2,cy+3,BR-2,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fill();
+      if(isSel){
+        ctx.beginPath();ctx.arc(cx,cy,BR+5,0,Math.PI*2);
+        ctx.strokeStyle='#378ADD';ctx.lineWidth=2.5;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
+      }
+      ctx.beginPath();ctx.arc(cx,cy,BR,0,Math.PI*2);
+      ctx.fillStyle=BALL_COLOR[color];ctx.fill();
+      ctx.strokeStyle=isSel?'#fff':BALL_DARK[color];
+      ctx.lineWidth=isSel?2.5:1.5;ctx.stroke();
+      const g=ctx.createRadialGradient(cx-6,cy-6,2,cx,cy,BR);
+      g.addColorStop(0,'rgba(255,255,255,0.35)');g.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.beginPath();ctx.arc(cx,cy,BR,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+    }
+  });
+}
+
+function getBallAt(canvas,ex,ey,pd){
+  const r=canvas.getBoundingClientRect();
+  const x=(ex-r.left)*(W/r.width),y=(ey-r.top)*(H/r.height);
+  for(const {key,cx} of PEGS){
+    const arr=pd[key];
+    for(let i=arr.length-1;i>=0;i--){
+      const cy=BASE_Y-BR-2-i*(BR*2+3);
+      if((x-cx)**2+(y-cy)**2<=BR*BR) return {peg:key,idx:i};
+    }
+  }
+  return null;
+}
+
+function getPegAt(canvas,ex,ey){
+  const r=canvas.getBoundingClientRect();
+  const x=(ex-r.left)*(W/r.width);
+  for(const {key,cx} of PEGS){if(Math.abs(x-cx)<34) return key;}
+  return null;
+}
+
+function startPractice(){
+  show('phase-practice');
+  document.getElementById('prac-player-canvas').onclick=handlePracClick;
+  resetPractice();
+}
+
+function resetPractice(){
+  pracPegs=dc(PRAC_INIT);pracSelected=null;pracFirstMoved=false;pracPlanTime=null;
+  pracStartTime=Date.now();
+  setPracInfo('Selecciona una bola para comenzar');
+  document.getElementById('prac-btns').innerHTML=
+    '<button class="btn" onclick="resetPractice()">Reiniciar práctica</button>'+
+    '<button class="btn btn-primary" onclick="skipToTask()">Continuar sin práctica →</button>';
+  document.getElementById('prac-player-canvas').onclick=handlePracClick;
+  renderPrac();
+}
+
+function renderPrac(){
+  drawTower(document.getElementById('prac-player-canvas'),pracPegs,true,pracSelected);
+  drawTower(document.getElementById('prac-goal-canvas'),PRAC_GOAL,false,null);
+}
+
+function handlePracClick(e){
+  const ball=getBallAt(e.target,e.clientX,e.clientY,pracPegs);
+  if(ball){selectPracBall(ball.peg,ball.idx);return;}
+  if(pracSelected){const peg=getPegAt(e.target,e.clientX,e.clientY);if(peg)movePracBallTo(peg);}
+}
+
+function selectPracBall(pegKey,idx){
+  const arr=pracPegs[pegKey];
+  if(idx!==arr.length-1){setPracInfo('Solo puedes mover la bola de la cima del palo');return;}
+  if(pracSelected&&pracSelected.peg===pegKey){pracSelected=null;setPracInfo('Selección cancelada');renderPrac();return;}
+  pracSelected={peg:pegKey,idx};
+  setPracInfo('Bola '+BALL_NAME[arr[idx]]+' seleccionada — haz clic en el palo destino');
+  renderPrac();
+}
+
+function movePracBallTo(toPeg){
+  if(!pracSelected)return;
+  const fromPeg=pracSelected.peg;
+  if(fromPeg===toPeg){pracSelected=null;renderPrac();return;}
+  if(pracPegs[toPeg].length>=PEG_MAX[toPeg]){setPracInfo('El palo destino está lleno');return;}
+  if(!pracFirstMoved){pracFirstMoved=true;pracPlanTime=((Date.now()-pracStartTime)/1000).toFixed(2);}
+  pracPegs[toPeg].push(pracPegs[fromPeg].pop());
+  pracSelected=null;setPracInfo('');renderPrac();
+  if(['L','M','S'].every(p=>JSON.stringify(pracPegs[p])===JSON.stringify(PRAC_GOAL[p]))){
+    setPracInfo('¡Correcto! Ya puedes comenzar la prueba.');
+    document.getElementById('prac-player-canvas').onclick=null;
+    setTimeout(()=>{
+      document.getElementById('prac-btns').innerHTML=
+        '<button class="btn btn-primary" onclick="skipToTask()">Iniciar prueba →</button>';
+    },300);
+  }
+}
+
+function skipToTask(){
+  show('phase-task');currentProb=0;results=[];
+  document.getElementById('player-canvas').onclick=handlePlayerClick;
+  loadProblem();
+}
+
+function setPracInfo(msg){document.getElementById('prac-info-bar').textContent=msg||'\u00a0';}
+
+function handlePlayerClick(e){
+  const ball=getBallAt(e.target,e.clientX,e.clientY,pegs);
+  if(ball){selectBall(ball.peg,ball.idx);return;}
+  if(selected){const peg=getPegAt(e.target,e.clientX,e.clientY);if(peg)moveBallTo(peg);}
+}
+
+function selectBall(pegKey,idx){
+  const arr=pegs[pegKey];
+  if(idx!==arr.length-1){setInfo('Solo puedes mover la bola de la cima del palo');return;}
+  if(selected&&selected.peg===pegKey){selected=null;setInfo('Selección cancelada');render();return;}
+  selected={peg:pegKey,idx};
+  setInfo('Bola '+BALL_NAME[arr[idx]]+' seleccionada — haz clic en el palo destino');
+  render();
+}
+
+function moveBallTo(toPeg){
+  if(!selected)return;
+  const fromPeg=selected.peg;
+  if(fromPeg===toPeg){selected=null;render();return;}
+  if(pegs[toPeg].length>=PEG_MAX[toPeg]){setInfo('El palo destino está lleno');return;}
+  if(!firstMoved){firstMoved=true;planTime=((Date.now()-startTime)/1000).toFixed(2);}
+  pegs[toPeg].push(pegs[fromPeg].pop());
+  moves++;selected=null;setInfo('');render();checkSolution();
+}
+
+function render(){
+  drawTower(document.getElementById('player-canvas'),pegs,true,selected);
+  drawTower(document.getElementById('goal-canvas'),GOALS[currentProb],false,null);
+}
+
+function checkSolution(){
+  const goal=GOALS[currentProb];
+  if(['L','M','S'].every(p=>JSON.stringify(pegs[p])===JSON.stringify(goal[p]))){
+    const totalTime=((Date.now()-startTime)/1000).toFixed(2);
+    results.push({prob:currentProb+1,moves,minMoves:MIN_MOVES[currentProb],totalTime,planTime:planTime||'0.00',ok:moves<=MIN_MOVES[currentProb]*2});
+    setTimeout(()=>{currentProb++;currentProb>=12?showResults():loadProblem();},400);
+  }
+}
+
+function setInfo(msg){document.getElementById('info-bar').textContent=msg||'\u00a0';}
+
+function loadProblem(){
+  pegs=dc(INIT);selected=null;moves=0;firstMoved=false;planTime=null;
+  startTime=Date.now();
+  document.getElementById('prob-num').textContent=currentProb+1;
+  setInfo('Selecciona una bola para comenzar');
+  renderDots();render();
+}
+
+function renderDots(){
+  const c=document.getElementById('progress-dots');c.innerHTML='';
+  for(let i=0;i<12;i++){
+    const d=document.createElement('div');
+    d.className='prog-dot'+(i<currentProb?' done':i===currentProb?' current':'');
+    d.textContent=i+1;c.appendChild(d);
+  }
+}
+
+function show(id){
+  document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function resetProblem(){loadProblem();}
+
+function showResults(){
+  show('phase-results');
+  const totalMoves=results.reduce((a,r)=>a+r.moves,0);
+  const avgPlan=(results.reduce((a,r)=>a+parseFloat(r.planTime),0)/results.length).toFixed(2);
+  const optimal=results.filter(r=>r.ok).length;
+  const totalTime=results.reduce((a,r)=>a+parseFloat(r.totalTime),0).toFixed(1);
+  document.getElementById('sum-cards').innerHTML=`
+    <div class="sum-card"><div class="sl">Total movimientos</div><div class="sv">${totalMoves}</div></div>
+    <div class="sum-card"><div class="sl">Problemas óptimos</div><div class="sv">${optimal}/12</div></div>
+    <div class="sum-card"><div class="sl">Planif. promedio</div><div class="sv">${avgPlan}s</div></div>
+    <div class="sum-card"><div class="sl">Tiempo total</div><div class="sv">${totalTime}s</div></div>`;
+  const tbody=document.getElementById('results-body');tbody.innerHTML='';
+  results.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.prob}</td><td>${r.moves}</td><td>${r.minMoves}</td><td>${r.totalTime}</td><td>${r.planTime}</td><td class="${r.ok?'ok':'fail'}">${r.ok?'Óptimo':'Excede mínimo'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function exportCSV(){
+  const hdr='Problema,Movimientos,Movimientos_minimos,Tiempo_total_s,Tiempo_planificacion_s,Estado\n';
+  const rows=results.map(r=>`${r.prob},${r.moves},${r.minMoves},${r.totalTime},${r.planTime},${r.ok?'Optimo':'Excede_minimo'}`).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([hdr+rows],{type:'text/csv'}));
+  a.download='TOL_Shallice_resultados.csv';a.click();
+}
+
+function restartAll(){show('phase-inst');}
+</script>
+</body>
+</html>
